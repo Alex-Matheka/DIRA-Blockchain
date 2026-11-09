@@ -1,0 +1,49 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_34-c3f667d89bfc9e4eedd6cb857093f62ae56f5a9c",
+  "solcVersion": "0.8.34",
+  "solcLongVersion": "0.8.34+commit.80d5c536",
+  "compilerType": "solc",
+  "toolVersions": {
+    "hardhat": "3.21.2"
+  },
+  "userSourceNameMap": {
+    "contracts/DIRAVoting.sol": "project/contracts/DIRAVoting.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "osaka",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/DIRAVoting.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.34;\n\ncontract DIRAVoting {\n\n    struct Election {\n       bytes32 administratorId;\n        bool isOpen;\n    }\n\n    mapping(string => Election) public elections;\n\n    // Tracks whether a pseudonymous voter has voted in an election\n    mapping(string => mapping(bytes32 => bool)) public hasVoted;\n\n    // Tracks the total number of recorded votes per election\n    mapping(string => uint256) public voteCount;\n \n\n    //vote-recording event\n    event VoteRecorded(\n    string electionId,\n    bytes32 nullifier,\n    bytes32 ballotCommitment\n     );\n\n     //recordVote function\n     function recordVote(\n    string memory _electionId,\n    bytes32 _nullifier,\n    bytes32 _ballotCommitment\n    )   public {\n\n    require(msg.sender == authorizedBackend, \"Not authorized\");\n\n    require(\n        elections[_electionId].administratorId != bytes32(0),\n        \"Election does not exist\"\n    );\n\n    require(\n        elections[_electionId].isOpen,\n        \"Election is closed\"\n    );\n\n    require(_nullifier != bytes32(0), \"Invalid nullifier\");\n\n    require(\n        _ballotCommitment != bytes32(0),\n        \"Invalid ballot commitment\"\n    );\n\n    require(\n        !hasVoted[_electionId][_nullifier],\n        \"Already voted\"\n    );\n\n    hasVoted[_electionId][_nullifier] = true;\n\n    voteCount[_electionId]++;\n\n    emit VoteRecorded(\n        _electionId,\n        _nullifier,\n        _ballotCommitment\n    );\n  }\n\n\n    address public authorizedBackend;\n    constructor() {\n    authorizedBackend = msg.sender;\n} \n\n// create election function\nfunction createElection(string memory _electionId,\n    bytes32 _administratorId) public {\n\n    require(msg.sender == authorizedBackend, \"Not authorized\");\n    require(bytes(_electionId).length > 0, \"Invalid election ID\");\n\n    require(_administratorId != bytes32(0), \"Invalid administrator ID\");\n\n    require(\n        elections[_electionId].administratorId == bytes32(0),\n        \"Election already exists\"\n    );\n\n    elections[_electionId].administratorId = _administratorId;\n\n    elections[_electionId].isOpen = false;\n\n}\n\n// open election function\n\nfunction openElection(string memory _electionId) public {\n\n    require(msg.sender == authorizedBackend, \"Not authorized\");\n\n    require(\n        elections[_electionId].administratorId != bytes32(0),\n        \"Election does not exist\"\n    );\n\n    require(\n        !elections[_electionId].isOpen,\n        \"Election already open\"\n    );\n\n    elections[_electionId].isOpen = true;\n}\n\n//close election\n\nfunction closeElection(string memory _electionId) public {\n\n    require(msg.sender == authorizedBackend, \"Not authorized\");\n\n    require(\n        elections[_electionId].administratorId != bytes32(0),\n        \"Election does not exist\"\n    );\n\n    require(\n        elections[_electionId].isOpen,\n        \"Election already closed\"\n    );\n\n    elections[_electionId].isOpen = false;\n}\n\n\n\n}\n\n "
+      }
+    }
+  }
+}
